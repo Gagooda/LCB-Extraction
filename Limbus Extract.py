@@ -1,7 +1,7 @@
 import random
 import tkinter as tk
 from pathlib import Path
-from PIL import Image, ImageTk  # type: ignore[reportMissingImports]
+from PIL import Image, ImageTk
 
 image_folders = {
     "0": Path("C:/Users/Roman/Pictures/common"),
@@ -30,17 +30,23 @@ results_frame = tk.Frame(root, bg="black")
 results_frame.grid(row=2, column=0, sticky="nsew", padx=10, pady=10)
 
 def extract(count):
-    # Clear results from the previous extraction.
+    
     for widget in results_frame.winfo_children():
         widget.destroy()
 
-    # Set up a 1-column layout or a 5-column layout for ten pulls.
+    
     columns = 1 if count == 1 else 5
     for column in range(columns):
         results_frame.columnconfigure(column, weight=1)
 
-    for index in range(count):
-        # Roll a rarity and choose an image from that rarity's folder.
+    result_label.config(text="Extracting...")
+
+    def reveal_pull(index):
+        
+        if index >= count:
+            result_label.config(text=f"Showing {count} pull(s)")
+            return
+
         rarity = random.choices(
             ["0", "00", "000"],
             weights=[70, 20, 10],
@@ -48,7 +54,6 @@ def extract(count):
         )[0]
         available_images = images_by_rarity[rarity]
 
-        # Put ten pulls into two rows of five.
         row = index // 5 if count == 10 else 0
         column = index % 5 if count == 10 else 0
 
@@ -69,30 +74,31 @@ def extract(count):
                 bg="#080700",
                 fg="white",
             ).pack()
-            continue
-
-        image_path = random.choice(available_images)
-
-        # Make one pull large, or ten pulls small enough to fit together.
-        if count == 1:
-            max_width = root.winfo_screenwidth() - 60
-            max_height = root.winfo_screenheight() - 220
         else:
-            max_width = root.winfo_screenwidth() // 5 - 30
-            max_height = root.winfo_screenheight() // 2 - 100
+            image_path = random.choice(available_images)
 
-        with Image.open(image_path) as source_image:
-            source_image.thumbnail(
-                (max_width, max_height),
-                Image.Resampling.LANCZOS,
-            )
-            photo = ImageTk.PhotoImage(source_image.copy())
+            if count == 1:
+                max_width = root.winfo_screenwidth() - 60
+                max_height = root.winfo_screenheight() - 220
+            else:
+                max_width = root.winfo_screenwidth() // 5 - 30
+                max_height = root.winfo_screenheight() // 2 - 100
 
-        picture = tk.Label(card, image=photo, bg="#080700")
-        picture.image = photo  # Keep a reference so Tkinter retains the image.
-        picture.pack(expand=True)
+            with Image.open(image_path) as source_image:
+                source_image.thumbnail(
+                    (max_width, max_height),
+                    Image.Resampling.LANCZOS,
+                )
+                photo = ImageTk.PhotoImage(source_image.copy())
 
-    result_label.config(text=f"Showing {count} pull(s)")
+            picture = tk.Label(card, image=photo, bg="#080700")
+            picture.image = photo  
+            picture.pack(expand=True)
+
+        
+        root.after(350, reveal_pull, index + 1)
+
+    reveal_pull(0)
 
 
 tk.Button(root, text="Extract 1",bg="black", fg="gold", command=lambda: extract(1)).grid(
